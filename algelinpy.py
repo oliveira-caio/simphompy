@@ -43,9 +43,8 @@ def escalona(M):
 def numero_pivos(M):
     """Conta o número de pivôs da matriz M.
 
-    Lembrando que, se a matriz M estiver escalonada,
-    o número de pivôs é o mesmo que a dimensão da
-    imagem dessa matriz.
+    Lembrando que, se a matriz M estiver escalonada, o número de pivôs é
+    o mesmo que a dimensão da imagem dessa matriz.
     """
     if len(M) == 0:
         return 0
