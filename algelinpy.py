@@ -1,6 +1,5 @@
 def troca_linha(M, i, j):
-    for k in range(len(M[0])):
-        M[i][k], M[j][k] = M[j][k], M[i][k]
+    M[i], M[j] = M[j], M[i]
 
 def multiplica_linha(M, i, c):
     for j in range(len(M[0])):
@@ -11,6 +10,7 @@ def combina_linha(M, add, mul, c):
         M[add][j] += c * M[mul][j]
 
 def escalona(M):
+    """Escalonamento por linha, ie, diagonal inferior deve vira 0."""
     if len(M) == 0:
         return
     
@@ -41,11 +41,20 @@ def escalona(M):
         i, j = i+1, j+1
 
 def numero_pivos(M):
+    """Conta o número de pivôs da matriz M.
+
+    Lembrando que, se a matriz M estiver escalonada,
+    o número de pivôs é o mesmo que a dimensão da
+    imagem dessa matriz.
+    """
     if len(M) == 0:
         return 0
+
+    linha_de_zeros = [0.0 for _ in range(len(M[0]))]
+    dim = 0
     
-    z, res = [0.0 for _ in range(len(M[0]))], 0
     for i in range(len(M)):
-        if M[i] != z:
-            res += 1
-    return res
+        if M[i] != linha_de_zeros:
+            dim += 1
+
+    return dim
