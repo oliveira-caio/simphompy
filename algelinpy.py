@@ -10,7 +10,7 @@ def combina_linha(M, add, mul, c):
         M[add][j] += c * M[mul][j]
 
 def escalona(M):
-    """Escalonamento por linha, ie, diagonal inferior deve vira 0."""
+    """Escalonamento por linha, ie, diagonal inferior vira 0."""
     if len(M) == 0:
         return
     
