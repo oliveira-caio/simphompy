@@ -1,16 +1,10 @@
-"""Programa que calcula os grupos de homologia de um complexo simplicial.
-
-1. Descrever para o computador o que é um complexo simplicial. OK
-2. Característica de Euler. OK
-
-3. Ensinar álgebra linear para o computador. (Parcialmente)
-4. Finalmente calcular de fato os grupos de homologia.
-"""
+"""Calcula os grupos de homologia de um complexo simplicial."""
 
 import algelinpy
 
 
 def sublistas(lista):
+    """Retorna todas as sublistas de uma lista com o conjunto vazio no final."""
     if len(lista) == 0:
         return [[]]
     primeiro = lista[0]
@@ -22,7 +16,7 @@ class ComplexoSimplicial():
         if isinstance(nome, str) is False:
             raise Exception("Nome deve ser uma string.")
         if ComplexoSimplicial._verifica_complexo(complexo) is False:
-            raise Exception("O complexo digitado não satisfaz os axiomas.")
+            raise Exception("O complexo informado não satisfaz os axiomas.")
         self.nome = nome
         self.complexo = complexo
         self.dimensao = len(max(self.complexo, key=len)) - 1
@@ -34,6 +28,17 @@ Característica de Euler: {self.caracteristica_de_euler()}\n\
 Números de Betti: {self.homologia()}\n'
 
     def _verifica_complexo(complexo):
+        """Verifica se o complexo digitado satisfaz os axiomas.
+
+        Essencialmente os axiomas são: a lista deve ser ordenada (definição
+        de orientação) e todas as faces de um simplexo devem estar no
+        complexo. Se tiver face repetida, aviso o usuário. A face repetida
+        aparece na lista freq, que marca se o simplexo já apareceu ou não.
+        Também verifico se os vértices dos simplexos são inteiros, ie, se
+        foi digitado [0,1,2] ao invés de ["0","1","2"], por exemplo. E
+        também não trabalhamos com o simplexo vazio.
+        """
+        freq = []
         if len(complexo) == 0:
             return False
         for s in complexo:
@@ -42,13 +47,17 @@ Números de Betti: {self.homologia()}\n'
             if all(s[i] < s[i+1] for i in range(len(s) - 1)) is False:
                 raise ValueError(f"O simplexo {s} não está ordenado.")
             faces = sublistas(s)
-            del faces[-1]
+            faces.pop() # elimina o conjunto vazio, que tá no final.
             for face in faces:
                 if face not in complexo:
                     return False
+            if s in freq:
+                raise Warning(f"Simplexo {s} repetido, dará erro nas contas.")
+            freq.append(s)
         return True
 
     def _n_simplexos(self, n):
+        """Retorna uma lista com os n-simplexos do complexo simplicial."""
         nsimps = []
         for simplexo in self.complexo:
             if len(simplexo) == n+1:
@@ -56,12 +65,27 @@ Números de Betti: {self.homologia()}\n'
         return nsimps
 
     def caracteristica_de_euler(self):
+        """Retorna a Característica de Euler do complexo simplicial.
+
+        Lembrando: a Característica de Euler é a soma alternada
+        k_0 - k_1 + k_2 - k_3 + ...,
+        sendo k_n a quantidade de n-simplexos no complexo. Tal fórmula
+        generaliza V - A + F = 2.
+        """
         chi = 0
-        for i in range(0, self.dimensao + 1):
+        for i in range(self.dimensao + 1):
             chi += ((-1) ** i) * len(self._n_simplexos(i))
         return chi
 
     def _d_matriz(self, n):
+        """Retorna a representação matricial do n-ésimo operador bordo.
+
+        Lembrando: o operador bordo d_n:C_n(X) -> C_{n-1}(X) sai do espaço
+        das n-cadeias (ie, combinações lineares formais dos n-simplexos)
+        e chega no espaço das n-cadeias. Um exemplo de como é tal operador:
+
+        d_n([0,1,2]) := [1,2] - [0,2] + [0,1]
+        """
         C_n = self._n_simplexos(n)
         C_n_menos_1 = self._n_simplexos(n-1)
         d = [[0.0 for _ in range(len(C_n))] for _ in range(len(C_n_menos_1))]
@@ -75,29 +99,40 @@ Números de Betti: {self.homologia()}\n'
         return d
 
     def _betti(self, n):
-        # b_n = dim H_n
-        # H_n = Z_n / B_n = ker d_n / im d_{n+1}
-        # V / W => dim(V/W) = dimV - dimW
-        # dim ker d_n - dim im d_{n+1}
+        """Retorna o n-ésimo número de Betti do complexo simplicial.
+
+        Lembrando: o n-ésimo número de Betti é a dimensão do n-ésimo grupo de
+        homologia e o n-ésimo grupo de homologia é definido como sendo o
+        quociente
+
+        H_n := Z_n / B_n = ker d_n / im d_{n+1}.
+
+        Como queremos calcular dim ker d_n e dim im d_{n+1}, escalonamos as
+        matrizes e contamos o número de pivôs. Lembrando que, pelo
+        Teorema do Núcleo-Imagem, dim ker d_n = dim C_n - dim im d_n, e
+        também sabemos que dim V/W = dimV - dimW, o que dá o resultado final
+        ao fazermos V = Z_n e W = B_n.
+        """
         d_n = self._d_matriz(n)
         d_n_mais_1 = self._d_matriz(n+1)
 
         algelinpy.escalona(d_n)
-        algelinpy.escalona(d_n_mais_1)        
-        
-        dim_dom = len(self._n_simplexos(n))
+        algelinpy.escalona(d_n_mais_1)
+
+        dim_dom = len(d_n_mais_1)
         dim_ciclos = dim_dom - algelinpy.numero_pivos(d_n)
         dim_bordos = algelinpy.numero_pivos(d_n_mais_1)
 
         return dim_ciclos - dim_bordos
 
     def homologia(self):
+        """Retorna uma lista com todos os números de Betti do complexo."""
         bettis = []
         for n in range(self.dimensao + 1):
             bettis.append(self._betti(n))
         return bettis
 
-    
+
 ponto = [[0]]
 ponto = ComplexoSimplicial("Ponto", ponto)
 print(ponto)
@@ -149,6 +184,7 @@ octaedro = [[0,1,2], [0,1,4], [0,2,3], [0,3,4], [1,2,5], [1,4,5],
 octaedro = ComplexoSimplicial("Octaedro", octaedro)
 print(octaedro)
 
+
 toro = [[0], [1], [2], [3], [4], [5], [6], [7], [8], [0,1], [1,2], [0,2],
         [4,8], [7,8], [4,7], [3,5], [5,6], [3,6], [0,4], [3,4],
         [0,3], [1,8], [5,8], [1,5], [2,7], [6,7], [2,6], [0,8],
@@ -159,6 +195,7 @@ toro = [[0], [1], [2], [3], [4], [5], [6], [7], [8], [0,1], [1,2], [0,2],
 toro = ComplexoSimplicial("Toro", toro)
 print(toro)
 
+
 projetivo = [[0], [1], [2], [3], [4], [5], [0,1], [0,2], [0,3], [0,4],
              [0,5], [1,2], [1,3], [1,4], [1,5], [2,3], [2,4], [2,5],
              [3,4], [3,5], [4,5], [0,2,3], [0,3,4], [0,1,4], [0,1,5],
@@ -166,10 +203,12 @@ projetivo = [[0], [1], [2], [3], [4], [5], [0,1], [0,2], [0,3], [0,4],
 projetivo = ComplexoSimplicial("Plano projetivo", projetivo)
 print(projetivo)
 
+
 mobius = [[0], [1], [2], [3], [4], [0,1], [0,2], [0,3], [0,4], [1,2], [1,3],
           [2,3], [2,4], [3,4], [0,1,3], [1,2,3], [2,3,4], [0,2,4]]
 mobius = ComplexoSimplicial("Faixa de Möbius", mobius)
 print(mobius)
+
 
 klein = [[0], [1], [2], [3], [4], [5], [6], [7], [8],
          [0,1], [0,2], [0,3], [0,4], [0,5], [0,6], [0,7], [0,8],
@@ -181,6 +220,7 @@ klein = [[0], [1], [2], [3], [4], [5], [6], [7], [8],
          [1,7,8], [1,2,8], [0,1,7], [0,4,7]]
 klein = ComplexoSimplicial("Garrafa de Klein", klein)
 print(klein)
+
 
 cilindro = [[0], [1], [2], [3], [4], [5], [0,1], [0,2], [0,3], [0,4], [0,5],
             [1,2], [1,4], [1,5], [2,5], [3,4], [3,5], [4,5], [0,3,4], [0,3,5],
