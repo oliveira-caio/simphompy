@@ -1,59 +1,59 @@
-def troca_linha(M, i, j):
+def swap_row(M, i, j):
     M[i], M[j] = M[j], M[i]
 
-def multiplica_linha(M, i, c):
+def multiply_row(M, i, c):
     for j in range(len(M[0])):
         M[i][j] *= c
 
-def combina_linha(M, add, mul, c):
+def combine_row(M, add, mul, c):
     for j in range(len(M[0])):
         M[add][j] += c * M[mul][j]
 
-def escalona(M):
-    """Escalonamento por linha, ie, diagonal inferior vira 0."""
+def gaussian_elimination(M):
+    """gaussian elimination by row, ie, inferior diagonal becomes 0."""
     if len(M) == 0:
         return
     
-    num_linhas, num_colunas = len(M), len(M[0])
+    num_rows, num_cols = len(M), len(M[0])
     i, j = 0, 0
 
     while True:
-        if i >= num_linhas or j >= num_colunas:
+        if i >= num_rows or j >= num_cols:
             break
 
         if M[i][j] == 0:
-            linha_naozero = i
+            row_nonzero = i
 
-            while linha_naozero < num_linhas and M[linha_naozero][j] == 0:
-                linha_naozero += 1
+            while row_nonzero < num_rows and M[row_nonzero][j] == 0:
+                row_nonzero += 1
 
-            if linha_naozero == num_linhas:
+            if row_nonzero == num_rows:
                 j += 1
                 continue
 
-            troca_linha(M, i, linha_naozero)
+            swap_row(M, i, row_nonzero)
 
-        for linha in range(i+1, num_linhas):
-            if M[linha][j] != 0:
-                fator = - (M[linha][j] / M[i][j])
-                combina_linha(M, linha, i, fator)
+        for row in range(i+1, num_rows):
+            if M[row][j] != 0:
+                factor = - (M[row][j] / M[i][j])
+                combine_row(M, row, i, factor)
 
         i, j = i+1, j+1
 
-def numero_pivos(M):
-    """Conta o número de pivôs da matriz M.
+def count_pivots(M):
+    """Count the number of pivots of a matrix.
 
-    Lembrando que, se a matriz M estiver escalonada, o número de pivôs é
-    o mesmo que a dimensão da imagem dessa matriz.
+    Recall that, if a matrix is in echelon form, then the number of
+    pivots is the same as the dimension of the image of the matrix.
     """
     if len(M) == 0:
         return 0
 
-    linha_de_zeros = [0.0 for _ in range(len(M[0]))]
+    zeros = [0.0 for _ in range(len(M[0]))]
     dim = 0
     
     for i in range(len(M)):
-        if M[i] != linha_de_zeros:
+        if M[i] != zeros:
             dim += 1
 
     return dim
